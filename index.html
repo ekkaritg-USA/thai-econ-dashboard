@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thailand's Economic Trajectory: A 25-Year Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: A single-page dashboard design. The core is an interactive chart linked to a timeline and dynamic info panels. This allows users to explore the data chronologically by hovering/clicking. The structure moves from this high-level interactive overview to deeper, static thematic sections below, and finally to a strategic outlook. This flow was chosen to guide the user from discovery (the chart) to understanding (thematic analysis) and conclusion (outlook), making a complex report digestible and engaging rather than a linear read. -->
+    <!-- Visualization & Content Choices: 1) Main Chart: Dual-line chart (Chart.js) to directly compare Thailand vs. World growth over time (Goal: Compare, Change). Interaction: Hovering highlights data points and updates info panels, linking quantitative data to qualitative context. 2) Timeline: Interactive HTML/CSS element to anchor the data in key political/natural events (Goal: Organize, Inform). Interaction: Hovering triggers UI updates. 3) Dynamic Stat Cards: HTML/CSS cards updated with JS to provide granular, year-specific data and context pulled from the report (Goal: Inform). 4) Thematic Sections: Structured HTML/CSS with Unicode icons to explain the report's core arguments (Cost of Instability, Vulnerabilities) in a scannable format (Goal: Explain, Organize). Justification: This multi-faceted approach transforms a static report into an exploratory tool. The focus is on linking data points to their narrative context interactively, which is more effective for user understanding than just presenting charts and text separately. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        .active-nav {
+            color: #0d9488;
+            font-weight: 600;
+            border-bottom: 2px solid #0d9488;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover {
+            color: #14b8a6;
+            border-bottom: 2px solid #14b8a6;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px;
+            max-height: 60vh;
+        }
+        .timeline-dot {
+            transition: all 0.2s ease-in-out;
+        }
+        .timeline-dot:hover {
+            transform: scale(1.5);
+        }
+        .stat-card {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .highlight-card {
+            box-shadow: 0 10px 15px -3px rgb(13 148 136 / 0.2), 0 4px 6px -4px rgb(13 148 136 / 0.2);
+            transform: translateY(-5px);
+            border-color: #0d9488;
+        }
+        .event-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Thailand's Economy</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Dashboard</a>
+                        <a href="#analysis" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Thematic Analysis</a>
+                        <a href="#outlook" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Strategic Outlook</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="hero" class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-teal-700 tracking-tight leading-tight">A Tale of Two Trajectories</h1>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">An interactive 25-year comparison of Thailand's economic growth against the global backdrop, revealing a story of immense potential perpetually constrained by political instability.</p>
+        </section>
+
+        <section id="dashboard" class="scroll-mt-20">
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Growth Performance Dashboard (2000-2024)</h2>
+                    <p class="text-gray-500 mt-1">Hover over the chart or timeline to explore year-by-year details.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
+                    <div class="lg:col-span-3">
+                        <div class="chart-container">
+                            <canvas id="gdpChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-1 flex flex-col space-y-4">
+                        <div id="info-card-year" class="stat-card border-2 border-transparent bg-gray-50 rounded-lg p-4 text-center">
+                            <h3 class="text-lg font-semibold text-gray-700">Year</h3>
+                            <p id="info-year" class="text-4xl font-bold text-teal-600">-</p>
+                        </div>
+                        <div id="info-card-pm" class="stat-card border-2 border-transparent bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-md font-semibold text-gray-700 text-center">Prime Minister</h3>
+                            <p id="info-pm" class="text-center text-gray-800 font-medium mt-1">-</p>
+                        </div>
+                        <div id="info-card-event" class="stat-card border-2 border-transparent bg-gray-50 rounded-lg p-4 flex-grow">
+                             <h3 class="text-md font-semibold text-gray-700 text-center">Key Event</h3>
+                            <p id="info-event" class="text-center text-gray-600 mt-1">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                     <div id="timeline" class="w-full overflow-x-auto pb-4">
+                        <div class="relative w-full h-12 flex items-center" style="min-width: 1200px;">
+                            <div class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-300"></div>
+                            <div id="timeline-events" class="absolute top-1/2 left-0 w-full h-full flex justify-between items-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="analysis" class="scroll-mt-20 mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800">Thematic Deep Dive</h2>
+                <p class="mt-2 text-lg text-gray-600">Unpacking the core drivers behind Thailand's economic story.</p>
+            </div>
+            <div class="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center gap-4">
+                        <span class="event-icon text-red-500">⚠️</span>
+                        <h3 class="text-xl font-bold text-gray-800">The Cost of Instability</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">Political crises have been the single most significant handbrake on the economy. Coups in 2006 and 2014, plus years of protests, created profound uncertainty, deterring long-term investment, suppressing consumer confidence, and leading to policy incoherence. This has resulted in a cumulatively lower growth trajectory, entrenching the nation in the middle-income trap.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center gap-4">
+                        <span class="event-icon text-blue-500">🌊</span>
+                        <h3 class="text-xl font-bold text-gray-800">Structural Vulnerabilities</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">The economy's structure has made it a magnet for shocks. The 2011 floods exposed poor national planning, with US$46.5B in damages centered on key industrial hubs. The COVID-19 pandemic revealed an over-reliance on tourism (up to 20% of GDP), leading to a deeper recession and slower recovery compared to more diversified ASEAN peers.</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center gap-4">
+                         <span class="event-icon text-purple-500">👑</span>
+                        <h3 class="text-xl font-bold text-gray-800">The Leadership Nexus</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">A dizzying turnover of Prime Ministers is a symptom of a deeper, unresolved conflict between populist electoral forces and a powerful, unelected establishment. This forces leaders to prioritize political survival over sound, long-term economic stewardship, making difficult but necessary structural reforms nearly impossible to implement.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="outlook" class="scroll-mt-20 mt-16">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800">Strategic Outlook & Key Challenges</h2>
+                <p class="mt-2 text-lg text-gray-600">The path forward for unlocking Thailand's economic potential.</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-bold text-lg text-teal-700 mb-2">Key Challenges</h4>
+                        <ul class="space-y-3 text-gray-700 list-disc list-inside">
+                            <li><span class="font-semibold">Breaking the Political Cycle:</span> Achieving a durable political settlement that respects democratic outcomes is the foremost challenge.</li>
+                            <li><span class="font-semibold">Escaping the Middle-Income Trap:</span> Shifting from stimulus to supply-side reforms in education, innovation, and productivity.</li>
+                             <li><span class="font-semibold">Addressing Vulnerabilities:</span> Strategically diversifying the economy away from over-reliance on tourism.</li>
+                            <li><span class="font-semibold">Managing Public Debt:</span> Elevated debt levels constrain fiscal space for crucial future investments.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg text-teal-700 mb-2">Implications for Stakeholders</h4>
+                        <ul class="space-y-3 text-gray-700 list-disc list-inside">
+                            <li><span class="font-semibold">Investors:</span> The primary risk premium is political. Analysis must go beyond economics to assess institutional stability.</li>
+                            <li><span class="font-semibold">Policymakers:</span> The absolute priority is fostering policy predictability and the rule of law to attract long-term investment.</li>
+                             <li><span class="font-semibold">Analysts:</span> Treat political risk as an endogenous, recurring feature of Thailand's economic model, not an external shock.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 border-t">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500">
+            <p>&copy; 2024 Interactive Economic Analysis. Data sourced from IMF World Economic Outlook.</p>
+        </div>
+    </footer>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const economicData = [
+        { year: 2000, world: 4.53, thailand: 4.46, pm: 'Chuan Leekpai', event: 'Dot-com bubble bursts' },
+        { year: 2001, world: 2.03, thailand: 3.44, pm: 'Thaksin Shinawatra', event: '9/11 attacks; China joins WTO' },
+        { year: 2002, world: 2.32, thailand: 6.15, pm: 'Thaksin Shinawatra', event: 'Post-9/11 global slowdown' },
+        { year: 2003, world: 3.09, thailand: 7.19, pm: 'Thaksin Shinawatra', event: 'US invasion of Iraq' },
+        { year: 2004, world: 4.47, thailand: 6.29, pm: 'Thaksin Shinawatra', event: 'Indian Ocean tsunami' },
+        { year: 2005, world: 4.02, thailand: 4.19, pm: 'Thaksin Shinawatra', event: 'Rising oil prices; political tensions' },
+        { year: 2006, world: 4.46, thailand: 4.97, pm: 'Thaksin Shinawatra / Surayud Chulanont', event: 'Thai Military Coup', key: true, icon: '⚠️' },
+        { year: 2007, world: 4.37, thailand: 5.44, pm: 'Surayud Chulanont', event: 'Onset of Global Financial Crisis' },
+        { year: 2008, world: 2.06, thailand: 1.73, pm: 'Samak Sundaravej / Somchai Wongsawat', event: 'Global Financial Crisis', key: true, icon: '📉' },
+        { year: 2009, world: -1.34, thailand: -0.69, pm: 'Abhisit Vejjajiva', event: 'Global recession' },
+        { year: 2010, world: 4.52, thailand: 7.51, pm: 'Abhisit Vejjajiva', event: 'Post-GFC rebound; "Red Shirt" protests' },
+        { year: 2011, world: 3.34, thailand: 0.84, pm: 'Yingluck Shinawatra', event: 'Great Thailand Floods', key: true, icon: '🌊' },
+        { year: 2012, world: 2.69, thailand: 7.24, pm: 'Yingluck Shinawatra', event: 'Post-flood reconstruction boom' },
+        { year: 2013, world: 2.87, thailand: 2.69, pm: 'Yingluck Shinawatra', event: 'Political crisis intensifies' },
+        { year: 2014, world: 3.13, thailand: 0.98, pm: 'Prayut Chan-o-cha', event: 'Thai Military Coup', key: true, icon: '⚠️' },
+        { year: 2015, world: 3.13, thailand: 3.13, pm: 'Prayut Chan-o-cha', event: 'China stock market turbulence' },
+        { year: 2016, world: 2.81, thailand: 3.44, pm: 'Prayut Chan-o-cha', event: 'Death of King Bhumibol Adulyadej' },
+        { year: 2017, world: 3.45, thailand: 4.18, pm: 'Prayut Chan-o-cha', event: 'Global synchronized growth' },
+        { year: 2018, world: 3.28, thailand: 4.22, pm: 'Prayut Chan-o-cha', event: 'US-China trade war begins' },
+        { year: 2019, world: 2.68, thailand: 2.11, pm: 'Prayut Chan-o-cha', event: 'Global trade slowdown' },
+        { year: 2020, world: -2.88, thailand: -6.05, pm: 'Prayut Chan-o-cha', event: 'COVID-19 Pandemic', key: true, icon: '🦠' },
+        { year: 2021, world: 6.35, thailand: 1.57, pm: 'Prayut Chan-o-cha', event: 'Global post-pandemic rebound' },
+        { year: 2022, world: 3.24, thailand: 2.46, pm: 'Prayut Chan-o-cha', event: 'Russia invades Ukraine' },
+        { year: 2023, world: 2.83, thailand: 1.89, pm: 'Srettha Thavisin', event: 'Post-election political uncertainty' },
+        { year: 2024, world: 3.20, thailand: 2.50, pm: 'Srettha Thavisin / Paetongtarn Shinawatra', event: 'Judicial dissolution of Move Forward Party', key: true, icon: '⚖️' }
+    ];
+
+    const labels = economicData.map(d => d.year);
+    const worldData = economicData.map(d => d.world);
+    const thailandData = economicData.map(d => d.thailand);
+
+    const infoYear = document.getElementById('info-year');
+    const infoPm = document.getElementById('info-pm');
+    const infoEvent = document.getElementById('info-event');
+    const infoCardYear = document.getElementById('info-card-year');
+    const infoCardPm = document.getElementById('info-card-pm');
+    const infoCardEvent = document.getElementById('info-card-event');
+
+    const updateInfo = (index) => {
+        if (index < 0 || index >= economicData.length) return;
+        const data = economicData[index];
+        infoYear.textContent = data.year;
+        infoPm.innerHTML = data.pm.replace(' / ', '<br>');
+        infoEvent.textContent = data.event;
+
+        infoCardYear.classList.add('highlight-card');
+        infoCardPm.classList.add('highlight-card');
+        infoCardEvent.classList.add('highlight-card');
+
+        setTimeout(() => {
+            infoCardYear.classList.remove('highlight-card');
+            infoCardPm.classList.remove('highlight-card');
+            infoCardEvent.classList.remove('highlight-card');
+        }, 1000);
+    };
+    
+    updateInfo(economicData.length - 1);
+
+    const timelineContainer = document.getElementById('timeline-events');
+    economicData.forEach((data, index) => {
+        const totalPoints = economicData.length - 1;
+        const position = (index / totalPoints) * 100;
+
+        const dot = document.createElement('div');
+        dot.className = 'timeline-dot absolute -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full cursor-pointer';
+        if (data.key) {
+             dot.className = 'timeline-dot absolute -translate-x-1/2 w-5 h-5 bg-teal-600 rounded-full cursor-pointer border-2 border-white ring-2 ring-teal-600';
+        }
+        dot.style.left = `${position}%`;
+        dot.dataset.index = index;
+        
+        if (data.key) {
+            const label = document.createElement('div');
+            label.className = 'absolute text-center -translate-x-1/2 mt-6';
+            label.style.left = `${position}%`;
+            label.innerHTML = `<span class="text-2xl">${data.icon}</span><p class="text-xs font-semibold text-gray-600 w-24">${data.year}: ${data.event.split(';')[0]}</p>`;
+            timelineContainer.appendChild(label);
+        }
+
+        timelineContainer.appendChild(dot);
+    });
+
+    timelineContainer.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('timeline-dot')) {
+            const index = parseInt(e.target.dataset.index);
+            updateInfo(index);
+            gdpChart.tooltip.setActiveElements([{ datasetIndex: 0, index: index }], { x: e.clientX, y: e.clientY });
+            gdpChart.update();
+        }
+    });
+
+
+    const ctx = document.getElementById('gdpChart').getContext('2d');
+    const gdpChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Thailand Real GDP Growth (%)',
+                data: thailandData,
+                borderColor: '#0d9488',
+                backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+                pointBackgroundColor: '#0d9488',
+                pointRadius: 3,
+                pointHoverRadius: 6,
+            }, {
+                label: 'World Real GDP Growth (%)',
+                data: worldData,
+                borderColor: '#6b7280',
+                backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                fill: false,
+                tension: 0.3,
+                borderWidth: 2,
+                pointBackgroundColor: '#6b7280',
+                pointRadius: 3,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            onHover: (event, chartElement) => {
+                if (chartElement.length > 0) {
+                    const index = chartElement[0].index;
+                    updateInfo(index);
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Real GDP Growth (Annual %)'
+                    },
+                    grid: {
+                      color: '#e5e7eb'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                   grid: {
+                      display: false
+                   }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: '#1f2937',
+                    titleFont: {
+                        size: 16,
+                        weight: 'bold',
+                    },
+                    bodyFont: {
+                        size: 14,
+                    },
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(2) + '%';
+                            }
+                            return label;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 8,
+                    }
+                }
+            }
+        }
+    });
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+            
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-nav'));
+            this.classList.add('active-nav');
+        });
+    });
+    
+    window.addEventListener('scroll', () => {
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        let current = '';
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active-nav');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active-nav');
+            }
+        });
+    });
+
+});
+</script>
+
+</body>
+</html>
